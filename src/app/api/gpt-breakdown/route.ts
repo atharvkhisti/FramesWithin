@@ -1,16 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
-
 export async function POST(req: NextRequest) {
   try {
-    const { palette } = await req.json()
+    const { palette, apiKey } = await req.json()
 
-    // Check if OpenAI API key is configured
-    if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your_openai_api_key') {
+    // Check if API key is provided
+    if (!apiKey || apiKey === 'your_openai_api_key') {
       // Return mock data if no API key
       return NextResponse.json({
         breakdown: {
@@ -28,6 +24,11 @@ export async function POST(req: NextRequest) {
         mock: true
       })
     }
+
+    // Initialize OpenAI with user's API key
+    const openai = new OpenAI({
+      apiKey: apiKey,
+    })
 
     // Compose the prompt for GPT-4
     const prompt = `Analyze this color palette and estimate professional color grading parameters.

@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { useAppStore } from '@/lib/store'
 import { useStatsStore } from '@/lib/stats-store'
+import { useSettingsStore } from '@/lib/settings-store'
 import { extractColorPaletteAsync, applyGradingSettings } from '@/features/grading'
 import { Badge } from '@/components/ui/badge'
 import { Sparkles, Palette } from 'lucide-react'
@@ -39,6 +40,7 @@ export default function UploadPage() {
 
   // Stats tracking
   const { incrementUploads, incrementPalettes, incrementExports, addUpload, addStorageUsed } = useStatsStore()
+  const { openaiApiKey } = useSettingsStore()
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -70,15 +72,17 @@ export default function UploadPage() {
         const palette = await extractColorPaletteAsync(img, 10);
         setPalette(palette);
         incrementPalettes(); // Track palette extraction
-        // Call grading breakdown API
-        fetch('/api/gpt-breakdown', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image: url, palette })
-        })
-          .then(res => res.json())
-          .then(data => setGradingBreakdown(data.breakdown))
-          .catch(() => setGradingBreakdown(null));
+        // Call grading breakdown API (only if user has API key)
+        if (openaiApiKey) {
+          fetch('/api/gpt-breakdown', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ palette, apiKey: openaiApiKey })
+          })
+            .then(res => res.json())
+            .then(data => setGradingBreakdown(data.breakdown))
+            .catch(() => setGradingBreakdown(null));
+        }
       } catch {
         setPalette(null);
         setGradingBreakdown(null);
